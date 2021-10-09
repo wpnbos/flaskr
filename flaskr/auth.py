@@ -65,6 +65,13 @@ def login():
 
 	return render_template("auth/login.html")
 
+def get_user_likes(id):
+	likes = get_db().execute(
+		"SELECT post_id FROM likes l WHERE l.user_id = ?", (id,)
+	).fetchall()
+
+	return [like["post_id"] for like in likes]
+
 @bp.before_app_request
 def load_logged_in_user():
 	user_id = session.get("user_id")
@@ -76,6 +83,7 @@ def load_logged_in_user():
 		g.user = get_db().execute(
 			"SELECT * FROM user WHERE id = ?", (user_id,)
 		).fetchone()
+		g.likes = get_user_likes(user_id)
 
 @bp.route("/logout")
 def logout():

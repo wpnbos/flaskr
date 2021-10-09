@@ -13,5 +13,14 @@ CREATE TABLE post (
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
 	title TEXT NOT NULL, 
 	body TEXT NOT NULL, 
+	likes INT NOT NULL DEFAULT 0, 
 	FOREIGN KEY (author_id) REFERENCES user (id)
+);
+
+CREATE TABLE likes (
+	user_id INTEGER NOT NULL, 
+	post_id INTEGER NOT NULL,
+	FOREIGN KEY (user_id) REFERENCES user (id),
+	FOREIGN KEY (post_id) REFERENCES post (id),
+	PRIMARY KEY (user_id, post_id)
 ); 
