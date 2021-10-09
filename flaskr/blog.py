@@ -9,12 +9,22 @@ from flaskr.db import get_db
 
 bp = Blueprint("blog", __name__)
 
+
+def get_comments(id):
+	db = get_db()
+	comments = db.execute(
+		"SELECT c.id, parent_id, body, author_id, created, username FROM comments c JOIN user u ON c.author_id = u.id WHERE c.parent_id = ? ORDER BY created DESC",
+	(id,)).fetchall()
+
+	return comments 
+
 @bp.route('/')
 def index():
 	db = get_db()
 	posts = db.execute(
 		"SELECT p.id, title, body, created, author_id, username, likes FROM post p JOIN user u ON p.author_id = u.id ORDER BY created DESC"
 	).fetchall()
+
 	return render_template("blog/index.html", posts=posts)
 
 @bp.route("/create", methods=("GET", "POST"))
@@ -102,18 +112,21 @@ def delete(id):
 @bp.route("/<int:id>/detail", methods=("GET",))
 def detail(id):
 	post = get_post(id, check_author=False)
-	return render_template("blog/detail.html", post=post)
+	comments = get_comments(id)
+	return render_template("blog/detail.html", post=post, comments=comments)
 
 @bp.route("/<int:post_id>/like_post", methods=("POST",))
 @login_required
 def like(post_id):
 	likes = get_user_likes(g.user["id"])
 	db = get_db()
-	print(likes)
+
+	#like the post
 	if post_id not in likes: 
 		db.execute("UPDATE post SET likes = likes + 1 WHERE id = ?", (post_id,))
 		db.execute("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", (g.user["id"], post_id))
 		db.commit()
+	#unlike the post
 	elif post_id in likes:
 		db.execute("UPDATE post SET likes = likes - 1 WHERE id = ?", (post_id,))
 		db.execute("DELETE FROM likes WHERE user_id = ? AND post_id = ?", (g.user["id"], post_id))

@@ -13,4 +13,15 @@
 		</header>
 		<p class="body">{{ post["body"] }}</p>
 	</article>
+
+	{% for comment in comments %}
+		<article class="post">
+			<div class="about"> by {{ comment["username"] }} on {{ comment["created"].strftime("%Y-%m-%d") }}
+			</div>
+			<p class="body">{{ post["body"] }}</p>
+		</article>
+		{% if not loop.last %}
+			<hr>
+		{% endif %}
+	{% endfor %}
 {% endblock %}

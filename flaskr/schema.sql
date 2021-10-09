@@ -24,3 +24,13 @@ CREATE TABLE likes (
 	FOREIGN KEY (post_id) REFERENCES post (id),
 	PRIMARY KEY (user_id, post_id)
 ); 
+
+CREATE TABLE comments (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	parent_id INTEGER NOT NULL, 
+	body text NOT NULL, 
+	author_id INTEGER NOT NULL, 
+	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+	FOREIGN KEY (parent_id) REFERENCES post (id)
+	FOREIGN KEY (author_id) REFERENCES user (id)
+);
