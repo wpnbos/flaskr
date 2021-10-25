@@ -1,7 +1,8 @@
 from flask import (
-	Blueprint, flash, g, redirect, render_template, request, url_for
+	Blueprint, flash, g, redirect, render_template, request, url_for, jsonify
 )
 
+import numpy as np
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required, get_user_likes
@@ -9,6 +10,14 @@ from flaskr.db import get_db
 
 bp = Blueprint("blog", __name__)
 
+random_decimal = np.random.rand()
+
+@bp.route('/update_decimal', methods=("POST", "GET"))
+def update_decimal():
+	random_decimal = np.random.rand()
+	print("doing the thing")
+	print(random_decimal)
+	return redirect(url_for("blog.index"))
 
 def get_comments(id):
 	db = get_db()
@@ -25,7 +34,7 @@ def index():
 		"SELECT p.id, title, body, created, author_id, username, likes FROM post p JOIN user u ON p.author_id = u.id ORDER BY created DESC"
 	).fetchall()
 
-	return render_template("blog/index.html", posts=posts)
+	return render_template("blog/index.html", posts=posts, rand=random_decimal)
 
 @bp.route("/create", methods=("GET", "POST"))
 @login_required
@@ -119,6 +128,7 @@ def detail(id):
 @login_required
 def like(post_id):
 	likes = get_user_likes(g.user["id"])
+	
 	db = get_db()
 
 	#like the post
@@ -131,4 +141,9 @@ def like(post_id):
 		db.execute("UPDATE post SET likes = likes - 1 WHERE id = ?", (post_id,))
 		db.execute("DELETE FROM likes WHERE user_id = ? AND post_id = ?", (g.user["id"], post_id))
 		db.commit()
-	return redirect(url_for("blog.index"))
+
+	g.likes = get_user_likes(g.user["id"])
+
+	body = render_template("blog/like_button.html", post=get_post(post_id, check_author=False))
+
+	return jsonify(body=body)

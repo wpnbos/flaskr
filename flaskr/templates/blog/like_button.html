@@ -1,0 +1,9 @@
+<div id = "like_button{{post['id']}}">
+	{% if post["id"] in g.likes %}
+	<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
+	{% else %}
+	<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+	{% endif %}
+
+	{{ post["likes"] }} likes
+</div>

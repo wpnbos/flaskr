@@ -16,19 +16,21 @@
 					<div class="about">by {{ post["username"] }} on {{ post["created"].strftime("%Y-%m-%d") }} 
 					<br>
 
-					<form action="{{ url_for('blog.like', post_id=post['id']) }}" method="post">
+					<div id = "like_button{{post['id']}}">
 						{% if post["id"] in g.likes %}
-    					<input class="like" type="submit" value="Unlike">
+						<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
 						{% else %}
-						<input class="like" type="submit" value="Like">
+						<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
 						{% endif %}
-  					</form> 
 
-					{{ post["likes"] }} likes
-				</div>
+						{{ post["likes"] }} likes
+					</div>
+
+					</div>
 				{% if g.user["id"] == post["author_id"] %}
 					<a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
 				{% endif %}
+				</div>
 			</header>
 			<p class="body">{{ post["body"] }}</p>
 		</article>
