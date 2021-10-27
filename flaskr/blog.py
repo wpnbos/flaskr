@@ -8,6 +8,8 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required, get_user_likes
 from flaskr.db import get_db
 
+import datetime 
+
 bp = Blueprint("blog", __name__)
 
 random_decimal = np.random.rand()
@@ -27,6 +29,22 @@ def get_comments(id):
 
 	return comments 
 
+def calc_elapsed(post):
+	now = datetime.datetime.now()
+
+	elapsed_seconds = (now - post["created"]).seconds
+	elapsed = str(int(elapsed_seconds)) + " seconds ago "
+	seconds_in_day = 60 * 60 * 24
+	seconds_in_hour = 60 * 60
+	if elapsed_seconds > seconds_in_day:
+		elapsed = str(int(elapsed_seconds / seconds_in_day)) + " days ago "
+	elif elapsed_seconds > seconds_in_hour:
+		elapsed = str(int(elapsed_seconds / seconds_in_hour)) + " hours ago "
+	elif elapsed_seconds > 60:
+		elapsed = str(int(elapsed_seconds / 60)) + " minutes ago "
+
+	return elapsed
+
 @bp.route('/')
 def index():
 	db = get_db()
@@ -34,7 +52,15 @@ def index():
 		"SELECT p.id, title, body, created, author_id, username, likes FROM post p JOIN user u ON p.author_id = u.id ORDER BY created DESC"
 	).fetchall()
 
-	return render_template("blog/index.html", posts=posts, rand=random_decimal)
+	post_dicts = [dict(post) for post in posts]
+	for post in post_dicts:
+		post["elapsed"] = calc_elapsed(post)
+		print(type(post["elapsed"]))
+		print(type(post["username"]))
+
+	print(type(posts[0]))
+	print(type(post_dicts[0]))
+	return render_template("blog/index.html", posts=post_dicts, rand=random_decimal)
 
 @bp.route("/create", methods=("GET", "POST"))
 @login_required
@@ -65,6 +91,10 @@ def get_post(id, check_author=True):
 		"SELECT p.id, title, body, created, author_id, username, likes FROM post p JOIN user u ON p.author_id = u.id WHERE p.id = ?",
 		(id,)
 	).fetchone()
+
+	post = dict(post)
+
+	post["elapsed"] = calc_elapsed(post)
 
 	if post is None: 
 		abort(404, f"Post id {id} doesn't exist.")
@@ -111,15 +141,40 @@ def update(id):
 @bp.route("/<int:id>/delete", methods=("POST",))
 @login_required
 def delete(id):
-	print('DELETE DELETE DELETE')
 	get_post(id)
 	db = get_db()
 	db.execute("DELETE FROM post WHERE id = ?", (id,))
 	db.commit()
 	return redirect(url_for("blog.index"))
 
-@bp.route("/<int:id>/detail", methods=("GET",))
+def comment(id):
+	body = request.form["body"]
+	error = None
+
+	if not body: 
+		error = "Comment text is required."
+
+	if error is not None: 
+		flash(error)
+	else: 
+		db = get_db()
+		db.execute(
+			"INSERT INTO comments (parent_id, body, author_id) VALUES (?, ?, ?)",
+			(id, body, g.user["id"])
+		)
+		db.commit()
+
+@bp.route("/<int:id>/detail", methods=("GET", "POST"))
 def detail(id):
+	if request.method == "POST":
+		if g.user is None: 
+			return redirect(url_for("auth.login"))
+		comment(id)
+
+		comments = get_comments(id)
+		body = render_template("blog/comments.html", id=id, comments=comments)
+		return jsonify(body=body)
+
 	post = get_post(id, check_author=False)
 	comments = get_comments(id)
 	return render_template("blog/detail.html", post=post, comments=comments)

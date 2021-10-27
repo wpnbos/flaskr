@@ -31,6 +31,15 @@ CREATE TABLE comments (
 	body text NOT NULL, 
 	author_id INTEGER NOT NULL, 
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-	FOREIGN KEY (parent_id) REFERENCES post (id)
+	likes INT NOT NULL DEFAULT 0,
+	FOREIGN KEY (parent_id) REFERENCES post (id), 
 	FOREIGN KEY (author_id) REFERENCES user (id)
+);
+
+CREATE TABLE children (
+	parent_id INTEGER NOT NULL,
+	child_id INTEGER NOT NULL,
+	FOREIGN KEY (parent_id) REFERENCES comments (id),
+	FOREIGN KEY (child_id) REFERENCES comments (id),
+	PRIMARY KEY (parent_id, child_id)
 );
