@@ -27,12 +27,14 @@ CREATE TABLE likes (
 
 CREATE TABLE comments (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	parent_id INTEGER NOT NULL, 
+	parent_id INTEGER DEFAULT NULL,
+	post_id INTEGER,  
 	body text NOT NULL, 
 	author_id INTEGER NOT NULL, 
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
 	likes INT NOT NULL DEFAULT 0,
-	FOREIGN KEY (parent_id) REFERENCES post (id), 
+	FOREIGN KEY (post_id) REFERENCES post (id), 
+	FOREIGN KEY (parent_id) REFERENCES comments (id), 
 	FOREIGN KEY (author_id) REFERENCES user (id)
 );
 

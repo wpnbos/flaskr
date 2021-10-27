@@ -5,6 +5,8 @@ from flask import (
 import numpy as np
 from werkzeug.exceptions import abort
 
+import json 
+
 from flaskr.auth import login_required, get_user_likes
 from flaskr.db import get_db
 
@@ -14,25 +16,36 @@ bp = Blueprint("blog", __name__)
 
 random_decimal = np.random.rand()
 
-@bp.route('/update_decimal', methods=("POST", "GET"))
-def update_decimal():
-	random_decimal = np.random.rand()
-	print("doing the thing")
-	print(random_decimal)
-	return redirect(url_for("blog.index"))
+
+def get_children(parent_id):
+	db = get_db()
+	children = db.execute("SELECT * FROM comments JOIN children ON comments.id = children.parent_id WHERE children.parent_id = ?", (parent_id,)).fetchall()
+	
+	return children
 
 def get_comments(id):
+	"""find a comment
+		find a all children"""
 	db = get_db()
 	comments = db.execute(
-		"SELECT c.id, parent_id, body, author_id, created, username FROM comments c JOIN user u ON c.author_id = u.id WHERE c.parent_id = ? ORDER BY created DESC",
+		"SELECT c.id, parent_id, post_id, body, author_id, created, username FROM comments c JOIN user u ON c.author_id = u.id WHERE c.post_id = ? ORDER BY created DESC",
 	(id,)).fetchall()
 
-	return comments 
+	tmp = []
+
+	for comment in comments: 
+		comment = dict(comment)
+		comment["elapsed"] = calc_elapsed(comment)
+		comment["created"] = comment["created"].strftime("%d-%m-%Y")
+		tmp.append(comment)
+
+	return tmp 
 
 def calc_elapsed(post):
-	now = datetime.datetime.now()
+	now = datetime.datetime.utcnow()
 
 	elapsed_seconds = (now - post["created"]).seconds
+
 	elapsed = str(int(elapsed_seconds)) + " seconds ago "
 	seconds_in_day = 60 * 60 * 24
 	seconds_in_hour = 60 * 60
@@ -55,11 +68,7 @@ def index():
 	post_dicts = [dict(post) for post in posts]
 	for post in post_dicts:
 		post["elapsed"] = calc_elapsed(post)
-		print(type(post["elapsed"]))
-		print(type(post["username"]))
 
-	print(type(posts[0]))
-	print(type(post_dicts[0]))
 	return render_template("blog/index.html", posts=post_dicts, rand=random_decimal)
 
 @bp.route("/create", methods=("GET", "POST"))
@@ -149,6 +158,7 @@ def delete(id):
 
 def comment(id):
 	body = request.form["body"]
+	parent_id = request.form["parent_id"]
 	error = None
 
 	if not body: 
@@ -159,10 +169,34 @@ def comment(id):
 	else: 
 		db = get_db()
 		db.execute(
+			"INSERT INTO comments (post_id, parent_id, body, author_id) VALUES (?, ?, ?, ?)",
+			(id, parent_id, body, g.user["id"])
+		)
+		db.commit()
+
+def save_reply(id, parent):
+	body = request.form["body"]
+	error = None
+
+	if not body:
+		error = "Comment text is required."
+
+	if error is not None:
+		flash(error)
+	else:
+		db = get_db()
+		db.execute(
 			"INSERT INTO comments (parent_id, body, author_id) VALUES (?, ?, ?)",
 			(id, body, g.user["id"])
 		)
+		child = db.execute("SELECT max(id) FROM comments").fetchone()
+
+		db.execute(
+			"INSERT INTO children (parent_id, child_id) VALUES (?, ?)",
+			(parent, child[0])
+		)
 		db.commit()
+
 
 @bp.route("/<int:id>/detail", methods=("GET", "POST"))
 def detail(id):
@@ -177,7 +211,19 @@ def detail(id):
 
 	post = get_post(id, check_author=False)
 	comments = get_comments(id)
-	return render_template("blog/detail.html", post=post, comments=comments)
+
+	return render_template("blog/detail.html", post=post, comments=json.dumps(comments))
+
+
+@bp.route("/<int:id>/detail/<int:parent>", methods=("POST",))
+def reply(id, parent):
+	if g.user is None:
+		return redirect(url_for("auth.login"))
+	save_reply(id, parent)
+
+	comments = get_comments(id)
+	body = render_template("blog/comments.html", id=id, comments=comments)
+	return jsonify(body=body)
 
 @bp.route("/<int:post_id>/like_post", methods=("POST",))
 @login_required

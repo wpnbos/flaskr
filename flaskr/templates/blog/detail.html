@@ -5,7 +5,7 @@
 		<header>
 			<div>
 				<h1> {{ post["title"] }} </h1>
-				<div class="about">by {{ post["username"] }} on {{ post["created"].strftime("%Y-%m-%d") }}</div>
+				<div class="about">{{ post["elapsed"] }} by {{ post["username"]}}</div>
 			</div>
 			{% if g.user["id"] == post["author_id"] %}
 				<a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
@@ -13,42 +13,62 @@
 		</header>
 		<p class="body">{{ post["body"] }}</p>
 
-		<button id="comment_button{{post['id']}}" onclick="expandTextarea('comment', {{post['id']}})">comment</button>
-		<form id="comment_form{{post['id']}}" method="post" style="display: none">
+		<button id="comment_button{{post['id']}}" onclick="expandTextarea('comment', '')">comment</button>
+		<form id="comment_form" method="post" style="display: none">
 			<textarea name="inputbody" id="input_body" placeholder="write something thoughtful"></textarea>
-			<input type="submit" id="save_comment{{post['id']}}" value="Save comment">
+			<button type="button" id="button_comment{{post['id']}}" value="Save comment" onclick="saveComment()">Save comment</button>
 		</form>
 	</article>
 
 <script>
-	$("#comment_form").on("submit", function(event) {
-		console.log("this works")
+	function saveComment(parentId=null)
+	{
+		if (parentId) {
+			textarea = "#input_body" + parentId
+		} else {
+			textarea = "#input_body"
+		}
 		$.ajax({
-			data : {
-				body: $("#input_body").val()
+			data: {
+				body: $(textarea).val(), 
+				parent_id: parentId
 			},
 			type: "POST",
-			url: "/" + {{ post["id"] }} + "/detail", 
-			success: function(data) {
-		      $(".comments").replaceWith(data.body)
-		    }
-		})
+			url: "/" + {{ post["id"] }} + "/detail",
+			success: function(response) {
+				$(".comments").replaceWith(response.body)
+			}
+		})		
+	}
 
-		event.preventDefault(); 
-	})
+	function saveReply(parentId)
+	{
+		$.ajax({
+			data: {
+				body: $("#input_body" + parentId).val()
+			},
+			type: "POST",
+			url: "/" + {{ post["id"] }} + "/detail/" + parentId,
+			success: function(response) {
+				$(".comments").replaceWith(response.body)
+			}
+		})		
+	}
+
+	console.log({{ comments|tojson|safe }})
 </script>
 
 	<div class="comments"> 
 		<h4> Comments </h4>
 		{% for comment in comments %}
 			<article class="post">
-				<div class="about"> by {{ comment["username"] }} on {{ comment["created"].strftime("%Y-%m-%d") }}
+				<div class="about"> {{ comment["elapsed"] }} by {{ comment["username"]}}
 				</div>
 				<p class="body">{{ comment["body"] }}</p>
 			<button id="comment_button{{comment['id']}}" onclick="expandTextarea('comment', {{comment['id']}})">reply</button>
 			<form id="comment_form{{comment['id']}}" method="post" style="display: none">
-				<textarea name="inputbody" id="input_body" placeholder="write something thoughtful"></textarea>
-				<input type="submit" id="save_comment{{comment['id']}}" value="Save comment">
+				<textarea name="inputbody" id="input_body{{ comment['id'] }}" placeholder="write something thoughtful"></textarea>
+				<button type="button" id="button_comment{{comment['id']}}" value="Save comment" onclick="saveComment({{comment['id']}})">Save reply</button>
 			</form>
 			</article>
 			{% if not loop.last %}

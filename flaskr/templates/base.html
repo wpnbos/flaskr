@@ -2,17 +2,6 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> 
 
 <script>
-function comment(postID)
-{
-  $.ajax({
-    url:"/" + postID + "/detail",
-    type:"POST",
-    success: function(data) {
-      $(".comments").replaceWith(data.body)
-    }
-  }); 
-}
-
 function like(postID)
 //make request for liking post
 {
