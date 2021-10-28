@@ -19,9 +19,13 @@ random_decimal = np.random.rand()
 
 def get_children(parent_id):
 	db = get_db()
-	children = db.execute("SELECT * FROM comments JOIN children ON comments.id = children.parent_id WHERE children.parent_id = ?", (parent_id,)).fetchall()
-	
-	return children
+	return [dict(comment) for comment in db.execute("SELECT * FROM comments c JOIN user u ON c.author_id = u.id WHERE parent_id = (?)", (parent_id,)).fetchall()]
+
+def comment_tree(comment):
+	comment["children"] = get_children(comment["id"])
+	comment["elapsed"] = calc_elapsed(comment)
+	for child in comment["children"]:
+		comment_tree(child)
 
 def get_comments(id):
 	"""find a comment
@@ -35,11 +39,14 @@ def get_comments(id):
 
 	for comment in comments: 
 		comment = dict(comment)
-		comment["elapsed"] = calc_elapsed(comment)
-		comment["created"] = comment["created"].strftime("%d-%m-%Y")
+		
 		tmp.append(comment)
 
-	return tmp 
+	comments = [comment for comment in tmp if not comment["parent_id"]]
+	for comment in comments: 
+		comment_tree(comment)
+
+	return comments 
 
 def calc_elapsed(post):
 	now = datetime.datetime.utcnow()
@@ -212,7 +219,7 @@ def detail(id):
 	post = get_post(id, check_author=False)
 	comments = get_comments(id)
 
-	return render_template("blog/detail.html", post=post, comments=json.dumps(comments))
+	return render_template("blog/detail.html", post=post, comments=comments)
 
 
 @bp.route("/<int:id>/detail/<int:parent>", methods=("POST",))

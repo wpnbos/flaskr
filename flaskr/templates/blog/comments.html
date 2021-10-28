@@ -1,6 +1,6 @@
-	<div class="comments"> 
+	<div class="comments" id="comments"> 
 		<h4> Comments </h4>
-		{% for comment in comments %}
+		{%- for comment in comments recursive %}
 			<article class="post">
 				<div class="about"> {{ comment["elapsed"] }} by {{ comment["username"]}}
 				</div>
@@ -11,8 +11,11 @@
 				<button type="button" id="button_comment{{comment['id']}}" value="Save comment" onclick="saveComment({{comment['id']}})">Save reply</button>
 			</form>
 			</article>
+			{%- if comment["children"] -%}
+				{{ loop(comment["children"]) }}
+			{%- endif %}
 			{% if not loop.last %}
 				<hr>
 			{% endif %}
-		{% endfor %}
+		{%- endfor %}
 	</div>

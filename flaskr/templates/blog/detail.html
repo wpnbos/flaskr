@@ -55,25 +55,8 @@
 		})		
 	}
 
-	console.log({{ comments|tojson|safe }})
 </script>
 
-	<div class="comments"> 
-		<h4> Comments </h4>
-		{% for comment in comments %}
-			<article class="post">
-				<div class="about"> {{ comment["elapsed"] }} by {{ comment["username"]}}
-				</div>
-				<p class="body">{{ comment["body"] }}</p>
-			<button id="comment_button{{comment['id']}}" onclick="expandTextarea('comment', {{comment['id']}})">reply</button>
-			<form id="comment_form{{comment['id']}}" method="post" style="display: none">
-				<textarea name="inputbody" id="input_body{{ comment['id'] }}" placeholder="write something thoughtful"></textarea>
-				<button type="button" id="button_comment{{comment['id']}}" value="Save comment" onclick="saveComment({{comment['id']}})">Save reply</button>
-			</form>
-			</article>
-			{% if not loop.last %}
-				<hr>
-			{% endif %}
-		{% endfor %}
-	</div>
+{% include "blog/comments.html" %}
+
 {% endblock %}
