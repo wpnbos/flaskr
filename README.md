@@ -20,6 +20,7 @@ install flask
 setup environment variables 
 
 `export FLASK_ENV=development`
+
 `export FLASK_APP=flaskr`
 
 initialize database 
