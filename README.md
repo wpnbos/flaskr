@@ -16,3 +16,16 @@ activate the environment
 
 install flask 
 `pip install flask`
+
+setup environment variables 
+
+`export FLASK_ENV=development`
+`export FLASK_APP=flaskr`
+
+initialize database 
+`flask init-db`
+
+run server 
+`flask run`
+
+navigate to `127.0.0.1:5000`!
