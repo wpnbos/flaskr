@@ -1,0 +1,48 @@
+<article class="post" style="margin-left: {{ 40 * comment['level'] }}px; margin-bottom: 15px">
+
+	<div class="about"> 
+		{{ comment["elapsed"] }} by {{ comment["username"]}} at level {{ comment["level"] }}
+	</div>
+
+	<p class="body"> {{ comment["body"] }} </p>
+
+	<button 
+		id="comment_button{{comment['id']}}"
+		onclick="expandTextarea('comment', {{comment['id']}})">
+			Reply
+	</button>
+
+	<button 
+		id="like_button{{comment['id']}}"
+		onclick="likeComment({{comment['id']}})">
+		{% if g.user%}
+			{% if comment["id"] in g.likes["comments"] %}
+				Unlike
+			{% else %}
+				Like 
+			{% endif %}
+		{% else %}
+			Like
+		{% endif %}
+	</button>
+
+	likes: {{ comment["likes"] }}
+
+	<form 
+		id="comment_form{{comment['id']}}" 
+		method="post" 
+		style="display: none">
+
+		<textarea 
+			name="inputbody" 
+			id="input_body{{ comment['id'] }}" 
+			placeholder="write something thoughtful"></textarea>
+
+		<button 
+			type="button" 
+			id="button_comment{{comment['id']}}" 
+			value="Save comment" 
+			onclick="saveComment({{comment['id']}})">Save reply</button>
+	</form>
+	<br>
+</article>

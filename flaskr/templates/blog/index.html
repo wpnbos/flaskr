@@ -16,8 +16,9 @@
 					<div class="about">{{ post["elapsed"] }} by {{ post["username"]}} 
 					<br>
 
+					{% if g.user %}
 					<div id = "like_button{{post['id']}}">
-						{% if post["id"] in g.likes %}
+						{% if post["id"] in g.likes["posts"] %}
 						<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
 						{% else %}
 						<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
@@ -25,6 +26,11 @@
 
 						{{ post["likes"] }} likes
 					</div>
+					{% else %}
+					<div id = "like_button{{post['id']}}">
+						<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+					</div>			
+					{% endif %}
 
 					</div>
 				{% if g.user["id"] == post["author_id"] %}

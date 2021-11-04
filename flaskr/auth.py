@@ -1,7 +1,7 @@
 import functools
 
 from flask import (
-	Blueprint, flash, g, redirect, render_template, request, session, url_for
+	Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify
 	)
 
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -11,6 +11,17 @@ from flaskr.db import get_db
 
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+def get_user_likes(id):
+	db = get_db()
+	likes = db.execute(
+		"SELECT post_id FROM likes l WHERE l.user_id = ?", (id,)
+	).fetchall()
+	comment_likes = db.execute(
+		"SELECT comment_id FROM c_likes c WHERE c.user_id = ?", (id,)
+	).fetchall()
+
+	return {"posts": [like["post_id"] for like in likes], "comments": [c_like["comment_id"] for c_like in comment_likes]}
 
 @bp.route("/register", methods=("GET", "POST"))
 def register():
@@ -65,13 +76,6 @@ def login():
 
 	return render_template("auth/login.html")
 
-def get_user_likes(id):
-	likes = get_db().execute(
-		"SELECT post_id FROM likes l WHERE l.user_id = ?", (id,)
-	).fetchall()
-
-	return [like["post_id"] for like in likes]
-
 @bp.before_app_request
 def load_logged_in_user():
 	user_id = session.get("user_id")
@@ -94,7 +98,8 @@ def login_required(view):
 	@functools.wraps(view)
 	def wrapped_view(**kwargs):
 		if g.user is None: 
-			return redirect(url_for("auth.login"))
+			print("to the login page!")
+			return jsonify(redirect=url_for("auth.login"))
 
 		return view(**kwargs)
 

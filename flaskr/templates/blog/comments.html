@@ -1,21 +1,10 @@
-	<div class="comments" id="comments"> 
-		<h4> Comments </h4>
-		{%- for comment in comments recursive %}
-			<article class="post">
-				<div class="about"> {{ comment["elapsed"] }} by {{ comment["username"]}}
-				</div>
-				<p class="body">{{ comment["body"] }}</p>
-			<button id="comment_button{{comment['id']}}" onclick="expandTextarea('comment', {{comment['id']}})">reply</button>
-			<form id="comment_form{{comment['id']}}" method="post" style="display: none">
-				<textarea name="inputbody" id="input_body{{ comment['id'] }}" placeholder="write something thoughtful"></textarea>
-				<button type="button" id="button_comment{{comment['id']}}" value="Save comment" onclick="saveComment({{comment['id']}})">Save reply</button>
-			</form>
-			</article>
-			{%- if comment["children"] -%}
-				{{ loop(comment["children"]) }}
-			{%- endif %}
-			{% if not loop.last %}
-				<hr>
-			{% endif %}
-		{%- endfor %}
-	</div>
+<div class="comments" id="comments"> 
+	<h4> Comments </h4>
+	{%- for comment in comments recursive %}
+		{% include "blog/comment.html" %}
+
+		{%- if comment["children"] -%}
+			{{ loop(comment["children"]) }}
+		{%- endif %}
+	{%- endfor %}
+</div>

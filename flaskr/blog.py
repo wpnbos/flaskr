@@ -21,18 +21,19 @@ def get_children(parent_id):
 	db = get_db()
 	return [dict(comment) for comment in db.execute("SELECT * FROM comments c JOIN user u ON c.author_id = u.id WHERE parent_id = (?)", (parent_id,)).fetchall()]
 
-def comment_tree(comment):
+def comment_tree(comment, level=0):
+	comment["level"] = level
 	comment["children"] = get_children(comment["id"])
 	comment["elapsed"] = calc_elapsed(comment)
 	for child in comment["children"]:
-		comment_tree(child)
+		comment_tree(child, level+1)
 
 def get_comments(id):
 	"""find a comment
 		find a all children"""
 	db = get_db()
 	comments = db.execute(
-		"SELECT c.id, parent_id, post_id, body, author_id, created, username FROM comments c JOIN user u ON c.author_id = u.id WHERE c.post_id = ? ORDER BY created DESC",
+		"SELECT c.id, parent_id, post_id, body, author_id, created, username, likes FROM comments c JOIN user u ON c.author_id = u.id WHERE c.post_id = ? ORDER BY created DESC",
 	(id,)).fetchall()
 
 	tmp = []
@@ -51,15 +52,17 @@ def get_comments(id):
 def calc_elapsed(post):
 	now = datetime.datetime.utcnow()
 
-	elapsed_seconds = (now - post["created"]).seconds
+	elapsed_seconds = (now.timestamp() - post["created"].timestamp())
 
 	elapsed = str(int(elapsed_seconds)) + " seconds ago "
 	seconds_in_day = 60 * 60 * 24
 	seconds_in_hour = 60 * 60
 	if elapsed_seconds > seconds_in_day:
 		elapsed = str(int(elapsed_seconds / seconds_in_day)) + " days ago "
+		
 	elif elapsed_seconds > seconds_in_hour:
 		elapsed = str(int(elapsed_seconds / seconds_in_hour)) + " hours ago "
+		
 	elif elapsed_seconds > 60:
 		elapsed = str(int(elapsed_seconds / 60)) + " minutes ago "
 
@@ -120,12 +123,16 @@ def get_post(id, check_author=True):
 
 	return post
 
-def get_user_likes(id):
-	likes = get_db().execute(
-		"SELECT post_id FROM likes l WHERE l.user_id = ?", (id,)
-	).fetchall()
-
-	return [like["post_id"] for like in likes] 
+@bp.before_request
+def get_user_karma():
+	if g.user:
+		db = get_db()
+		g.karma = db.execute(
+			"SELECT COUNT (post_id) FROM post p JOIN likes l ON p.id = l.post_id WHERE p.author_id = (?)", (g.user["id"],)
+		).fetchone()[0]
+		g.karma += db.execute(
+			"SELECT COUNT (comment_id) FROM comments c JOIN c_likes l on c.id = l.comment_id WHERE c.author_id = (?)", (g.user["id"],)
+		).fetchone()[0]
 
 @bp.route("/<int:id>/update", methods=("GET", "POST"))
 @login_required
@@ -181,6 +188,7 @@ def comment(id):
 		)
 		db.commit()
 
+@login_required
 def save_reply(id, parent):
 	body = request.form["body"]
 	error = None
@@ -204,12 +212,11 @@ def save_reply(id, parent):
 		)
 		db.commit()
 
-
 @bp.route("/<int:id>/detail", methods=("GET", "POST"))
 def detail(id):
 	if request.method == "POST":
 		if g.user is None: 
-			return redirect(url_for("auth.login"))
+			return jsonify(redirect=url_for("auth.login"))
 		comment(id)
 
 		comments = get_comments(id)
@@ -233,19 +240,21 @@ def reply(id, parent):
 	return jsonify(body=body)
 
 @bp.route("/<int:post_id>/like_post", methods=("POST",))
-@login_required
 def like(post_id):
+	print(g.user)
+	if g.user is None:
+		return jsonify(redirect=url_for("auth.login"))
 	likes = get_user_likes(g.user["id"])
 	
 	db = get_db()
 
 	#like the post
-	if post_id not in likes: 
+	if post_id not in likes["posts"]: 
 		db.execute("UPDATE post SET likes = likes + 1 WHERE id = ?", (post_id,))
 		db.execute("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", (g.user["id"], post_id))
 		db.commit()
 	#unlike the post
-	elif post_id in likes:
+	elif post_id in likes["posts"]:
 		db.execute("UPDATE post SET likes = likes - 1 WHERE id = ?", (post_id,))
 		db.execute("DELETE FROM likes WHERE user_id = ? AND post_id = ?", (g.user["id"], post_id))
 		db.commit()
@@ -253,5 +262,31 @@ def like(post_id):
 	g.likes = get_user_likes(g.user["id"])
 
 	body = render_template("blog/like_button.html", post=get_post(post_id, check_author=False))
+	print("returns")
+	return jsonify(body=body)
+
+@bp.route("/<int:post_id>/comment/<int:comment_id>/like", methods=("POST",))
+@login_required
+def like_comment(comment_id, post_id):
+	likes = get_user_likes(g.user["id"])
+	likes = likes["comments"]
+	db = get_db()
+
+	#like the post
+	if comment_id not in likes: 
+		db.execute("UPDATE comments SET likes = likes + 1 WHERE id = ?", (comment_id,))
+		db.execute("INSERT INTO c_likes (user_id, comment_id) VALUES (?, ?)", (g.user["id"], comment_id))
+		db.commit()
+	#unlike the post
+	elif comment_id in likes:
+		db.execute("UPDATE comments SET likes = likes - 1 WHERE id = ?", (comment_id,))
+		db.execute("DELETE FROM c_likes WHERE user_id = ? AND comment_id = ?", (g.user["id"], comment_id))
+		db.commit()
+
+	g.likes = get_user_likes(g.user["id"])
+
+	comments = get_comments(post_id)
+	body = render_template("blog/comments.html", id=post_id, comments=comments)
 
 	return jsonify(body=body)
+

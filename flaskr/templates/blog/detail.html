@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+<h1>{% block title %}Comments{% endblock %}</h1>
+
 {% block content %}
 	<article class="post">
 		<header>
@@ -36,25 +38,36 @@
 			type: "POST",
 			url: "/" + {{ post["id"] }} + "/detail",
 			success: function(response) {
+				if (response.redirect) {
+			    	console.log("redirect")
+			    	window.location = response.redirect
+			    } else {
 				$(".comments").replaceWith(response.body)
+				}
 			}
-		})		
+		})	
+
+		// clear the text area input
+		$(textarea).val('')	
 	}
 
-	function saveReply(parentId)
+	function likeComment(commentId)
+	//make request for liking post
 	{
-		$.ajax({
-			data: {
-				body: $("#input_body" + parentId).val()
-			},
-			type: "POST",
-			url: "/" + {{ post["id"] }} + "/detail/" + parentId,
-			success: function(response) {
-				$(".comments").replaceWith(response.body)
-			}
-		})		
+		console.log("liek comment function")
+	  $.ajax({
+	    url: "/" + {{ post["id"] }} + "/comment/" + commentId + "/like",
+	    type:"POST",
+	    success: function(response) {
+			if (response.redirect) {
+		    	console.log("redirect")
+		    	window.location = response.redirect
+		    } else {
+	    	$(".comments").replaceWith(response.body)
+	    	}
+	    }
+	  }); 
 	}
-
 </script>
 
 {% include "blog/comments.html" %}

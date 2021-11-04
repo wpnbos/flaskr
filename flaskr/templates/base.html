@@ -1,22 +1,31 @@
 <!doctype html>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> 
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
 <script>
 function like(postID)
 //make request for liking post
 {
+  console.log("like button")
   $.ajax({
     url:"/" + postID + "/like_post",
     type:"POST",
     success: function(data) {
-      $("#like_button" + postID).replaceWith(data.body)
+      console.log(data.redirect)
+      if (data.redirect) {
+        console.log("redirect")
+        window.location = data.redirect
+      } else {
+        console.log("replace")
+        $("#like_button" + postID).replaceWith(data.body)
+      } 
     }
   }); 
 }
 
 function expandTextarea(type, num_id)
 {
-    console.log("button " + num_id + " works")
+    //console.log("button " + num_id + " works")
     $("#" + type + "_form" + num_id).toggle(); 
 }
 
@@ -39,7 +48,7 @@ function expandTextarea(type, num_id)
   </h1>
   <ul>
     {% if g.user %}
-      <li><span>{{ g.user['username'] }}</span>
+      <li><span>{{ g.user['username'] }} ({{ g.karma }})</span>
       <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
     {% else %}
       <li><a href="{{ url_for('auth.register') }}">Register</a>

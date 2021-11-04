@@ -25,6 +25,14 @@ CREATE TABLE likes (
 	PRIMARY KEY (user_id, post_id)
 ); 
 
+CREATE TABLE c_likes (
+	user_id INTEGER NOT NULL, 
+	comment_id INTEGER NOT NULL,
+	FOREIGN KEY (user_id) REFERENCES user (id),
+	FOREIGN KEY (comment_id) REFERENCES comments (id),
+	PRIMARY KEY (user_id, comment_id)
+); 
+
 CREATE TABLE comments (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	parent_id INTEGER DEFAULT NULL,
