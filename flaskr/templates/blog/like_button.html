@@ -1,9 +1,15 @@
-<div id = "like_button{{post['id']}}">
-	{% if post["id"] in g.likes %}
-	<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
+{% if g.user["id"] != post["author_id"] %}
+	{% if g.user %}
+	<div id = "like_button{{post['id']}}">
+		{% if post["id"] in g.likes["posts"] %}
+		<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
+		{% else %}
+		<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+		{% endif %}
 	{% else %}
-	<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+	<div id = "like_button{{post['id']}}">
+		<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">	
 	{% endif %}
-
-	{{ post["likes"] }} likes
-</div>
+		{{ post["likes"] }} likes
+	</div>
+{% endif %}

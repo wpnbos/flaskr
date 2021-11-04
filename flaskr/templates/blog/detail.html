@@ -9,11 +9,17 @@
 				<h1> {{ post["title"] }} </h1>
 				<div class="about">{{ post["elapsed"] }} by {{ post["username"]}}</div>
 			</div>
+
 			{% if g.user["id"] == post["author_id"] %}
 				<a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
 			{% endif %}
 		</header>
-		<p class="body">{{ post["body"] }}</p>
+		<p class="body">
+			{% if post["image"] %}
+				<img class="post_image" src="{{ url_for('static', filename='/images/' + post['image']) }}">
+				{{ post["image"] }}
+			{% endif %}
+		{{ post["body"] }}</p>
 
 		<button id="comment_button{{post['id']}}" onclick="expandTextarea('comment', '')">comment</button>
 		<form id="comment_form" method="post" style="display: none">

@@ -13,7 +13,7 @@
 			<header>
 				<div>
 					<h1><a href="{{ url_for('blog.detail', id = post['id']) }}"> {{ post["title"] }} </a></h1>
-					<div class="about">{{ post["elapsed"] }} by {{ post["username"]}} 
+					<div class="about">{{ post["elapsed"] }} by {{ post["username"]}} - {{ post["comment_count"] }} comment(s) 
 					<br>
 
 					{% if post["image"] %}
@@ -21,23 +21,8 @@
 						{{ post["image"] }}
 					{% endif %}
 
-					{% if g.user["id"] != post["author_id"] %}
-						{% if g.user %}
-						<div id = "like_button{{post['id']}}">
-							{% if post["id"] in g.likes["posts"] %}
-							<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
-							{% else %}
-							<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
-							{% endif %}
-						</div>
-						{% else %}
-						<div id = "like_button{{post['id']}}">
-							<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
-						</div>			
-						{% endif %}
-					{% endif %}
-
-					</div>{{ post["likes"] }} likes
+					{% include "blog/like_button.html" %}
+					</div>
 				{% if g.user["id"] == post["author_id"] %}
 					<a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
 				{% endif %}

@@ -64,6 +64,14 @@ def get_comments(id):
 
 	return comments 
 
+def count_comments(post_id):
+	db = get_db()
+	comment_count = db.execute(
+		"SELECT COUNT(id) FROM comments WHERE post_id = (?)", (post_id,)
+	).fetchone()
+	return comment_count[0]
+
+
 def calc_elapsed(post):
 	now = datetime.datetime.utcnow()
 
@@ -93,6 +101,7 @@ def index():
 	post_dicts = [dict(post) for post in posts]
 	for post in post_dicts:
 		post["elapsed"] = calc_elapsed(post)
+		post["comment_count"] = count_comments(post["id"])
 
 	return render_template("blog/index.html", posts=post_dicts)
 
@@ -127,7 +136,7 @@ def create():
 
 def get_post(id, check_author=True):
 	post = get_db().execute(
-		"SELECT p.id, title, body, created, author_id, username, likes FROM post p JOIN user u ON p.author_id = u.id WHERE p.id = ?",
+		"SELECT p.id, title, body, created, author_id, username, likes, image FROM post p JOIN user u ON p.author_id = u.id WHERE p.id = ?",
 		(id,)
 	).fetchone()
 
