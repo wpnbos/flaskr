@@ -13,7 +13,8 @@ CREATE TABLE post (
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
 	title TEXT NOT NULL, 
 	body TEXT NOT NULL, 
-	likes INT NOT NULL DEFAULT 0, 
+	likes INT NOT NULL DEFAULT 1,
+	image TEXT DEFAULT NULL,  
 	FOREIGN KEY (author_id) REFERENCES user (id)
 );
 
@@ -40,7 +41,7 @@ CREATE TABLE comments (
 	body text NOT NULL, 
 	author_id INTEGER NOT NULL, 
 	created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-	likes INT NOT NULL DEFAULT 0,
+	likes INT NOT NULL DEFAULT 1,
 	FOREIGN KEY (post_id) REFERENCES post (id), 
 	FOREIGN KEY (parent_id) REFERENCES comments (id), 
 	FOREIGN KEY (author_id) REFERENCES user (id)
