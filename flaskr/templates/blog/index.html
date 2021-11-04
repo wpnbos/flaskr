@@ -16,23 +16,28 @@
 					<div class="about">{{ post["elapsed"] }} by {{ post["username"]}} 
 					<br>
 
-					{% if g.user %}
-					<div id = "like_button{{post['id']}}">
-						{% if post["id"] in g.likes["posts"] %}
-						<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
-						{% else %}
-						<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
-						{% endif %}
-
-						{{ post["likes"] }} likes
-					</div>
-					{% else %}
-					<div id = "like_button{{post['id']}}">
-						<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
-					</div>			
+					{% if post["image"] %}
+						<img class="post_image" src="{{ url_for('static', filename='/images/' + post['image']) }}">
+						{{ post["image"] }}
 					{% endif %}
 
-					</div>
+					{% if g.user["id"] != post["author_id"] %}
+						{% if g.user %}
+						<div id = "like_button{{post['id']}}">
+							{% if post["id"] in g.likes["posts"] %}
+							<input class="like" type="submit" value="Unlike" onclick="like({{post['id']}})">
+							{% else %}
+							<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+							{% endif %}
+						</div>
+						{% else %}
+						<div id = "like_button{{post['id']}}">
+							<input class="like" type="submit" value="Like" onclick="like({{post['id']}})">
+						</div>			
+						{% endif %}
+					{% endif %}
+
+					</div>{{ post["likes"] }} likes
 				{% if g.user["id"] == post["author_id"] %}
 					<a class="action" href="{{ url_for('blog.update', id=post['id']) }}">Edit</a>
 				{% endif %}

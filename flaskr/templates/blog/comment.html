@@ -12,10 +12,11 @@
 			Reply
 	</button>
 
+	{% if g.user["id"] != comment["author_id"] %}
 	<button 
 		id="like_button{{comment['id']}}"
 		onclick="likeComment({{comment['id']}})">
-		{% if g.user%}
+		{% if g.user %}
 			{% if comment["id"] in g.likes["comments"] %}
 				Unlike
 			{% else %}
@@ -25,6 +26,7 @@
 			Like
 		{% endif %}
 	</button>
+	{% endif %}
 
 	likes: {{ comment["likes"] }}
 
